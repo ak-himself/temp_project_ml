@@ -3,11 +3,16 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 import time
 from pathlib import Path
 
 import cv2
 import mediapipe as mp
+
+# Allow running as `python src/capture.py` in addition to `python -m src.capture`.
+if __package__ is None or __package__ == "":
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from src.config import (
     ALLOW_TWO_HAND_GESTURES,
