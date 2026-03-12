@@ -7,11 +7,9 @@ venv/
 .env
 
 # Models and logs
-models/*
+
 logs/*
 
-# Large raw/generated data
-data/processed/*
 
 # OS/editor
 .DS_Store
