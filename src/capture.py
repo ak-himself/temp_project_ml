@@ -34,6 +34,7 @@ from src.config import (
     ROI_RIGHT_MARGIN_RATIO,
     ROI_SIDE_RATIO,
 )
+from src.skeleton_canvas import render_skeleton_canvas
 
 
 mp_hands = mp.solutions.hands
@@ -163,6 +164,12 @@ def run_capture(
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb)
+            skeleton_canvas = render_skeleton_canvas(
+                results=results,
+                frame_shape=frame.shape,
+                roi=roi,
+                canvas_size=IMAGE_SIZE,
+            )
 
             can_capture = False
             status = "No hand"
@@ -213,13 +220,12 @@ def run_capture(
 
             now = time.time()
             if auto_capture and can_capture and now - last_capture_ts >= capture_interval_sec and saved_count < target_images:
-                crop = frame[y1:y2, x1:x2]
-                crop = cv2.resize(crop, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
+                crop = skeleton_canvas
                 filename = f"img_{img_index:06d}.jpg"
                 out_path = class_dir / filename
                 cv2.imwrite(str(out_path), crop)
 
-                b, s = measure_quality(crop)
+                b, s = measure_quality(roi_bgr)
                 append_capture_log(CAPTURE_LOG_FILE, gesture, out_path, b, s, handedness_name)
 
                 img_index += 1
@@ -227,6 +233,8 @@ def run_capture(
                 last_capture_ts = now
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), (40, 255, 40), 2)
+            roi_preview = cv2.resize(skeleton_canvas, (x2 - x1, y2 - y1), interpolation=cv2.INTER_AREA)
+            frame[y1:y2, x1:x2] = roi_preview
             cv2.putText(frame, f"Class: {gesture}", (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
             cv2.putText(frame, f"Saved: {saved_count}/{target_images}", (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
             cv2.putText(frame, f"Status: {status}", (20, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)

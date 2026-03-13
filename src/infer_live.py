@@ -7,6 +7,7 @@ from collections import deque
 from pathlib import Path
 
 import cv2
+import joblib
 import mediapipe as mp
 import numpy as np
 import torch
@@ -26,6 +27,7 @@ from src.config import (
     ROI_RIGHT_MARGIN_RATIO,
     ROI_SIDE_RATIO,
 )
+from src.skeleton_canvas import render_skeleton_canvas
 
 
 mp_hands = mp.solutions.hands
@@ -57,6 +59,63 @@ def landmarks_inside_roi(hand_landmarks, frame_w: int, frame_h: int, roi: tuple[
         if px < x1 or px > x2 or py < y1 or py > y2:
             return False
     return True
+
+
+def hand_to_array(hand_landmarks) -> np.ndarray:
+    pts = np.array([[lm.x, lm.y, lm.z] for lm in hand_landmarks.landmark], dtype=np.float32)
+    wrist = pts[0:1, :]
+    rel = pts - wrist
+    radius = float(np.max(np.linalg.norm(rel[:, :2], axis=1)))
+    if radius < 1e-6:
+        radius = 1.0
+    rel = rel / radius
+    return rel.reshape(-1)
+
+
+def build_two_hand_feature(results) -> np.ndarray | None:
+    if not results.multi_hand_landmarks:
+        return None
+
+    feature_len = 63
+    right = np.zeros(feature_len, dtype=np.float32)
+    left = np.zeros(feature_len, dtype=np.float32)
+
+    for idx, hand_lm in enumerate(results.multi_hand_landmarks):
+        feat = hand_to_array(hand_lm)
+        label = None
+        if results.multi_handedness and idx < len(results.multi_handedness):
+            label = results.multi_handedness[idx].classification[0].label
+
+        if label == "Right":
+            right = feat
+        elif label == "Left":
+            left = feat
+        else:
+            if np.all(right == 0):
+                right = feat
+            elif np.all(left == 0):
+                left = feat
+
+    return np.concatenate([right, left], axis=0)
+
+
+def map_probs(src_probs: np.ndarray, src_classes: list[str], dst_classes: list[str]) -> np.ndarray:
+    out = np.zeros(len(dst_classes), dtype=np.float32)
+    src_index = {name: i for i, name in enumerate(src_classes)}
+    for i, cls_name in enumerate(dst_classes):
+        if cls_name in src_index:
+            out[i] = float(src_probs[src_index[cls_name]])
+    total = float(out.sum())
+    if total > 0:
+        out = out / total
+    return out
+
+
+def predict_landmark_probs(landmark_payload: dict, feat: np.ndarray, dst_classes: list[str]) -> np.ndarray:
+    lm_model = landmark_payload["model"]
+    src_classes = list(lm_model.classes_)
+    src_probs = lm_model.predict_proba(feat.reshape(1, -1))[0]
+    return map_probs(np.asarray(src_probs, dtype=np.float32), src_classes, dst_classes)
 
 
 def build_model(num_classes: int, checkpoint: dict) -> torch.nn.Module:
@@ -112,6 +171,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Model checkpoint path (e.g., models/gesture_classifier.pt)",
     )
     parser.add_argument("--camera", type=int, default=CAMERA_INDEX)
+    parser.add_argument(
+        "--landmark-model",
+        type=Path,
+        default=MODELS_DIR / "landmark_classifier.joblib",
+        help="Optional landmark model for hybrid fusion",
+    )
+    parser.add_argument("--cnn-weight", type=float, default=0.6, help="CNN probability weight")
+    parser.add_argument("--landmark-weight", type=float, default=0.4, help="Landmark probability weight")
     parser.add_argument("--threshold", type=float, default=0.60, help="Min confidence to accept prediction")
     parser.add_argument("--stability", type=int, default=6, help="Consecutive frames required")
     parser.add_argument("--cooldown", type=float, default=0.45, help="Seconds between accepted actions")
@@ -151,6 +218,10 @@ def resolve_model_path(model_arg: Path) -> Path:
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.cnn_weight < 0 or args.landmark_weight < 0:
+        raise ValueError("--cnn-weight and --landmark-weight must be >= 0")
+    if (args.cnn_weight + args.landmark_weight) <= 0:
+        raise ValueError("Sum of --cnn-weight and --landmark-weight must be > 0")
 
     model_path = resolve_model_path(args.model)
     checkpoint = torch.load(model_path, map_location="cpu")
@@ -161,6 +232,9 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = build_model(num_classes=len(class_names), checkpoint=checkpoint).to(device)
+    landmark_payload = None
+    if args.landmark_model.exists():
+        landmark_payload = joblib.load(args.landmark_model)
 
     preprocess = transforms.Compose(
         [
@@ -201,6 +275,12 @@ def main() -> None:
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb)
             has_hand = bool(results.multi_hand_landmarks)
+            skeleton_canvas = render_skeleton_canvas(
+                results=results,
+                frame_shape=frame.shape,
+                roi=roi,
+                canvas_size=tuple(image_size),
+            )
 
             status = "No hand"
             can_infer = False
@@ -251,14 +331,22 @@ def main() -> None:
                         status = "Ready"
 
             if can_infer:
-                roi_bgr = frame[y1:y2, x1:x2]
-                inp = preprocess(roi_bgr).unsqueeze(0).to(device)
+                inp = preprocess(skeleton_canvas).unsqueeze(0).to(device)
                 with torch.no_grad():
                     logits = model(inp)
-                    probs = torch.softmax(logits, dim=1)[0]
-                    pred_idx = int(torch.argmax(probs).item())
-                    pred_conf = float(probs[pred_idx].item())
-                    pred_label = class_names[pred_idx]
+                    cnn_probs = torch.softmax(logits, dim=1)[0].detach().cpu().numpy().astype(np.float32)
+
+                final_probs = cnn_probs.copy()
+                if landmark_payload is not None:
+                    lm_feat = build_two_hand_feature(results)
+                    if lm_feat is not None:
+                        lm_probs = predict_landmark_probs(landmark_payload, lm_feat, class_names)
+                        denom = args.cnn_weight + args.landmark_weight
+                        final_probs = (args.cnn_weight * cnn_probs + args.landmark_weight * lm_probs) / denom
+
+                pred_idx = int(np.argmax(final_probs))
+                pred_conf = float(final_probs[pred_idx])
+                pred_label = class_names[pred_idx]
 
             accepted_for_history = pred_label
             if pred_conf < args.threshold:
@@ -279,6 +367,8 @@ def main() -> None:
                 last_action_ts = now
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), (40, 255, 40), 2)
+            roi_preview = cv2.resize(skeleton_canvas, (x2 - x1, y2 - y1), interpolation=cv2.INTER_AREA)
+            frame[y1:y2, x1:x2] = roi_preview
             cv2.putText(frame, f"Pred: {pred_label} ({pred_conf:.2f})", (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
             cv2.putText(frame, f"Last action: {last_committed}", (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (255, 255, 0), 2)
             cv2.putText(frame, f"Status: {status}", (20, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
@@ -291,6 +381,7 @@ def main() -> None:
                 status_lines=[
                     f"threshold={args.threshold:.2f} stability={args.stability} cooldown={args.cooldown:.2f}s",
                     f"allow_two_hands={args.allow_two_hands}",
+                    f"fusion=cnn:{args.cnn_weight:.2f} lm:{args.landmark_weight:.2f}",
                     f"model_classes={len(class_names)}",
                     f"model={model_path.name}",
                 ],
