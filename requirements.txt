@@ -1,0 +1,15 @@
+# Core numerical and ML stack
+numpy>=1.26.4,<2.1
+scikit-learn>=1.5.0,<1.8
+xgboost>=2.0.0,<3.0
+joblib>=1.4.0,<2.0
+
+# Deep learning (CPU/GPU selected by TensorFlow build)
+tensorflow>=2.16.1,<2.19
+
+# CV and hand tracking
+opencv-python>=4.10.0,<5.0
+mediapipe>=0.10.14,<0.11
+
+# Reporting/plots used by training utilities
+matplotlib>=3.8.0,<4.0
