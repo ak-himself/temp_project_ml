@@ -1,6 +1,6 @@
 # Dataset Validation Report
 
-- Timestamp: 1775910793
+- Timestamp: 1775911745
 - Total RGB files: 31200
 - Total feature files: 31200
 - Total paired samples: 31200
@@ -46,7 +46,7 @@
 | Finger | Closed(0) | Half-open(1) | Open(2) |
 |---|---:|---:|---:|
 | thumb | 0 | 0 | 31200 |
-| index | 12262 | 6130 | 12808 |
+| index | 12204 | 6188 | 12808 |
 | middle | 18638 | 2962 | 9600 |
 | ring | 25684 | 1916 | 3600 |
 | pinky | 22193 | 2399 | 6608 |
@@ -55,9 +55,9 @@
 
 | Direction | Count |
 |---|---:|
-| camera | 25748 |
+| camera | 25778 |
 | face | 0 |
 | up | 0 |
 | down | 1828 |
-| left | 3624 |
+| left | 3594 |
 | right | 0 |

@@ -1,5 +1,5 @@
 {
-  "timestamp": 1775910793,
+  "timestamp": 1775911745,
   "target_images_per_class": 1200,
   "summary": {
     "total_rgb": 31200,
@@ -280,8 +280,8 @@
       "2": 31200
     },
     "index": {
-      "0": 12262,
-      "1": 6130,
+      "0": 12204,
+      "1": 6188,
       "2": 12808
     },
     "middle": {
@@ -301,11 +301,11 @@
     }
   },
   "palm_direction_distribution": {
-    "camera": 25748,
+    "camera": 25778,
     "face": 0,
     "up": 0,
     "down": 1828,
-    "left": 3624,
+    "left": 3594,
     "right": 0
   }
 }

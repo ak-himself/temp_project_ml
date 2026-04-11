@@ -1115,7 +1115,6 @@ def run_live_model_predictions(camera_index: int) -> None:
         raise RuntimeError("Could not open camera")
     print_camera_settings(cap, camera_index)
 
-    simple_window = "ASL Live Predict RGB"
     predict_window = "ASL Live Predict Models"
     prev_ts = time.time()
 
@@ -1209,7 +1208,6 @@ def run_live_model_predictions(camera_index: int) -> None:
 
             cv2.putText(frame_pred, "q=quit", (20, frame_pred.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (220, 220, 220), 1)
 
-            cv2.imshow(simple_window, frame_clean)
             cv2.imshow(predict_window, frame_pred)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
@@ -1277,7 +1275,6 @@ def run_live_stacked_prediction(camera_index: int) -> None:
         raise RuntimeError("Could not open camera")
     print_camera_settings(cap, camera_index)
 
-    simple_window = "ASL Live Predict RGB"
     predict_window = "ASL Live Predict Stacked"
     prev_ts = time.time()
 
@@ -1387,7 +1384,6 @@ def run_live_stacked_prediction(camera_index: int) -> None:
 
             cv2.putText(frame_pred, "q=quit", (20, frame_pred.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (220, 220, 220), 1)
 
-            cv2.imshow(simple_window, frame_clean)
             cv2.imshow(predict_window, frame_pred)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
@@ -1444,7 +1440,6 @@ def run_live_hierarchical_prediction(camera_index: int) -> None:
         raise RuntimeError("Could not open camera")
     print_camera_settings(cap, camera_index)
 
-    simple_window = "ASL Live Predict RGB"
     predict_window = "ASL Live Predict Hierarchy"
     prev_ts = time.time()
 
@@ -1573,7 +1568,6 @@ def run_live_hierarchical_prediction(camera_index: int) -> None:
 
             cv2.putText(frame_pred, "q=quit", (20, frame_pred.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (220, 220, 220), 1)
 
-            cv2.imshow(simple_window, frame_clean)
             cv2.imshow(predict_window, frame_pred)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
@@ -1630,7 +1624,6 @@ def run_live_final_prediction(camera_index: int, debug_overlay: bool = True) -> 
         raise RuntimeError("Could not open camera")
     print_camera_settings(cap, camera_index)
 
-    simple_window = "ASL Live Predict RGB"
     predict_window = "ASL Live Predict Final" if debug_overlay else "ASL Final UI"
     prev_ts = time.time()
 
@@ -1813,7 +1806,6 @@ def run_live_final_prediction(camera_index: int, debug_overlay: bool = True) -> 
                 1,
             )
 
-            cv2.imshow(simple_window, frame_clean)
             cv2.imshow(predict_window, frame_pred)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):

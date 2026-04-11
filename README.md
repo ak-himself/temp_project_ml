@@ -1,206 +1,151 @@
 # ASL Static Gesture Interpreter
 
-This repository is developed in staged execution.
+This README is a strict step-by-step runbook for training and testing the full pipeline.
 
-Current approved implementation focus:
-- Step 1 (capture and dataset tooling)
+## Project Status
 
-## Step 1 Final Design
+- Class set: 26 classes (`A-Z`)
+- Feature vector: 119D (`63 + 15 + 30 + 5 + 6`)
+- Single-hand only pipeline (no two-hand mode)
 
-Each captured sample writes two artifacts with strict 1:1 sample mapping:
+## Prerequisites
 
-1. RGB image (for CNN)
-- Source: strict ROI crop only
-- Resize: configurable (default 128x128)
-- Path: data/raw/rgb/<CLASS>/imgXXXXXX.png
-
-2. Feature vector (for tabular models)
-- 117D order:
-  - 63 landmarks
-  - 15 joint angles
-  - 30 pairwise distances
-  - 5 finger states (0/1/2)
-  - 4 palm direction one-hot (camera/face/up/down)
-- Path: data/raw/landmarks/<CLASS>/lmXXXXXX.npy
-
-Sample identity:
-- Shared numeric sample_id across both files:
-  - img000123.png <-> lm000123.npy
-
-## Removed From Step 1
-
-- subject_id usage
-- subject-based logging
-- skeleton image saving to dataset
-
-Note:
-- Skeleton rendering is used for live preview/debug overlay only.
-
-## Capture Log
-
-Path:
-- logs/capture_log.csv
-
-Columns:
-- timestamp
-- sample_id
-- label
-- rgb_path
-- feature_path
-- finger_states
-- palm_direction
-
-## Finger Analysis Mode
-
-Command:
+From project root:
 
 ```bash
-python capture.py --analyze-fingers
+pyenv shell 3.12.7
 ```
 
-Purpose:
-- inspect geometric finger parameters for threshold tuning later
-- no calibration logic
-- no class labeling
+## Step 1: Data Capture and Validation
 
-Overlay includes:
-- per-finger angle
-- per-finger tip-to-base ratio
-- palm orientation (camera/face/up/down/left/right)
-- FPS
-- ROI status
-
-Logging in analysis mode:
-- press k to append one row to logs/finger_analysis.csv
-- press q to quit
-
-finger_analysis.csv columns:
-- timestamp
-- palm_orientation
-- 5 angles
-- 5 ratios
-
-Note:
-- Analysis mode does not classify finger states and does not apply threshold decisions.
-- It is only for collecting statistics before threshold design.
-
-## Palm Direction Feature
-
-4-class feature in 117D vector:
-- camera
-- face
-- up
-- down
-
-Computed from palm normal:
-- v1 = index_mcp - wrist
-- v2 = pinky_mcp - wrist
-- normal = cross(v1, v2)
-
-Extended 6-class orientation is used in analysis overlay/logging:
-- camera, face, up, down, left, right
-
-## Commands
-
-Capture one class:
+1. Capture class data (repeat per class)
 
 ```bash
 python capture.py --gesture A --target 1200
+python capture.py --gesture B --target 1200
+# ... continue for all classes up to Z
 ```
 
-Run validation checks only:
+2. Validate dataset integrity
 
 ```bash
 python capture.py --audit --target 1200
 ```
 
-Run preview + validation:
+3. Optional visual preview report
 
 ```bash
 python capture.py --preview --target 1200
-python capture.py --preview --target 1200 --no-preview-window
 ```
 
-Run live stacked prediction (Step 3):
+Step 1 outputs:
+- `data/raw/rgb/<CLASS>/imgXXXXXX.png`
+- `data/raw/landmarks/<CLASS>/lmXXXXXX.npy`
+- `logs/capture_log.csv`
+- `logs/dataset_validation.json`
+- `logs/dataset_validation.md`
+
+## Step 2: Train Base Models
+
+1. Train tabular models
+
+```bash
+python training/train_xgboost.py
+python training/train_rf.py
+python training/train_mlp.py
+```
+
+2. Train CNN (powerful machine recommended)
+
+```bash
+python training/train_cnn.py --epochs 40 --image-size 224 --batch-size 128
+```
+
+3. Optional one-command trainer for all Step 2 models
+
+```bash
+python training/step2_train.py --model all --epochs 40 --image-size 224 --batch-size 128
+```
+
+4. Test Step 2 live model view
+
+```bash
+python capture.py --predict-models
+```
+
+## Step 3: Train and Test Stacking Model
+
+1. Train stacking meta-model
+
+```bash
+python training/train_stacking.py
+```
+
+2. Test stacked live prediction
 
 ```bash
 python capture.py --predict-stacked
 ```
 
-Run live hierarchical prediction (Step 4):
+## Step 4: Hierarchy Layer Test
+
+1. Run hierarchical live prediction
 
 ```bash
 python capture.py --predict-hierarchy
 ```
 
-Run live final stabilized prediction (Step 5):
+Step 4 behavior:
+- `FINAL`: hierarchy decision output
+- `Reason`: acceptance/rejection rule used
+- `UNCERTAIN`: no rule accepted the frame
+
+## Step 5: Temporal Stabilization Test
+
+1. Run temporal-stabilized live prediction
 
 ```bash
 python capture.py --predict-final
 ```
 
-Run final operator UI (Step 6):
+Step 5 behavior:
+- `RAW`: direct Step 4 output
+- `SMOOTH`: windowed temporal smoothing
+- `FINAL`: debounced stable output
+
+## Step 6: Final Operator UI
+
+1. Run final clean UI mode
 
 ```bash
 python capture.py --ui-final
 ```
 
-Step 6 controls:
-- `space`: pause/resume live inference
-- `c`: clear stable output state
+Controls:
+- `space`: pause/resume inference
+- `c`: clear stable state
 - `q`: quit
 
-Step 5 output behavior:
-- `RAW` is direct Step 4 hierarchy output
-- `SMOOTH` is temporal-window aggregation
-- `FINAL` is debounced stable output for UI/use
+## Re-Training After Replacing CNN
 
-Step 4 output behavior:
-- `FINAL` line is produced by hierarchy policy
-- `Reason` explains which rule accepted/rejected prediction
-- `UNCERTAIN` means confidence/support criteria were not met
+If you retrain CNN on another machine and replace `models/cnn.h5`, re-run Step 3:
 
-## Validation Tool Coverage
+```bash
+python training/train_stacking.py
+```
 
-Validation verifies:
-- RGB <-> feature pairing integrity
-- per-class counts
-- missing sample pairs
-- finger-state distribution
-- palm-direction distribution
-- feature dimension integrity (expects 117)
+Then re-test:
 
-Outputs:
-- logs/dataset_validation.json
-- logs/dataset_validation.md
-- logs/dataset_preview.jpg
+```bash
+python capture.py --predict-stacked
+python capture.py --predict-hierarchy
+python capture.py --predict-final
+python capture.py --ui-final
+```
 
-## Keys In Capture Mode
+## Key Artifacts
 
-- s: start/pause auto capture
-- q: quit
-
-## Configuration
-
-Step 1 tunables are in config.py, including:
-- camera/ROI settings
-- image size
-- quality thresholds
-- feature dimensions
-- placeholder finger-state thresholds for future manual tuning
-- Step 4 hierarchy thresholds:
-  - stack high-confidence acceptance
-  - stack margin acceptance
-  - base-model agreement minimum
-  - base agreement confidence minimum
-  - stack-support fallback thresholds
-- Step 5 temporal stabilization thresholds:
-  - window size and minimum frames
-  - smoothing acceptance confidence
-  - debounce frame count
-  - stable-label timeout frames
-
-## Active Class Set
-
-Current classes are 26 alphabets only:
-- A-Z
+- Base models: `models/xgboost.pkl`, `models/rf.pkl`, `models/mlp.pkl`, `models/cnn.h5`
+- Stacking model: `models/stack_meta.pkl`
+- Stacking config: `models/stacking_config.json`
+- Metrics: `logs/step2/*_metrics.json`
