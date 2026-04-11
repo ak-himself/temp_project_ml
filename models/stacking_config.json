@@ -1,0 +1,47 @@
+{
+  "classes": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z"
+  ],
+  "base_models": [
+    "xgboost.pkl",
+    "rf.pkl",
+    "mlp.pkl",
+    "cnn.h5"
+  ],
+  "meta_model": "stack_meta.pkl",
+  "meta_feature_order": [
+    "xgboost",
+    "rf",
+    "mlp",
+    "cnn"
+  ],
+  "image_size": [
+    128,
+    128
+  ]
+}
