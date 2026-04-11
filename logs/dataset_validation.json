@@ -1,6 +1,6 @@
 {
-  "timestamp": 1775902992,
-  "target_images_per_class": 1500,
+  "timestamp": 1775910793,
+  "target_images_per_class": 1200,
   "summary": {
     "total_rgb": 31200,
     "total_features": 31200,
@@ -17,8 +17,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -27,8 +27,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -37,8 +37,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -47,8 +47,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -57,8 +57,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -67,8 +67,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -77,8 +77,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -87,8 +87,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -97,8 +97,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -107,8 +107,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -117,8 +117,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -127,8 +127,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -137,8 +137,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -147,8 +147,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -157,8 +157,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -167,8 +167,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -177,8 +177,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -187,8 +187,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -197,8 +197,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -207,8 +207,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -217,8 +217,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -227,8 +227,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -237,8 +237,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -247,8 +247,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -257,8 +257,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     },
@@ -267,8 +267,8 @@
       "rgb_count": 1200,
       "feature_count": 1200,
       "paired_count": 1200,
-      "target": 1500,
-      "coverage_pct": 80.0,
+      "target": 1200,
+      "coverage_pct": 100.0,
       "missing_rgb_count": 0,
       "missing_feature_count": 0
     }
@@ -280,32 +280,32 @@
       "2": 31200
     },
     "index": {
-      "0": 13758,
-      "1": 5834,
-      "2": 11608
+      "0": 12262,
+      "1": 6130,
+      "2": 12808
     },
     "middle": {
-      "0": 19838,
+      "0": 18638,
       "1": 2962,
-      "2": 8400
+      "2": 9600
     },
     "ring": {
-      "0": 25744,
-      "1": 1856,
+      "0": 25684,
+      "1": 1916,
       "2": 3600
     },
     "pinky": {
-      "0": 23393,
-      "1": 2389,
-      "2": 5418
+      "0": 22193,
+      "1": 2399,
+      "2": 6608
     }
   },
   "palm_direction_distribution": {
-    "camera": 25778,
+    "camera": 25748,
     "face": 0,
     "up": 0,
     "down": 1828,
-    "left": 3594,
+    "left": 3624,
     "right": 0
   }
 }

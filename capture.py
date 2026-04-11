@@ -1583,7 +1583,7 @@ def run_live_hierarchical_prediction(camera_index: int) -> None:
     cv2.destroyAllWindows()
 
 
-def run_live_final_prediction(camera_index: int) -> None:
+def run_live_final_prediction(camera_index: int, debug_overlay: bool = True) -> None:
     import joblib
     import tensorflow as tf
 
@@ -1631,7 +1631,7 @@ def run_live_final_prediction(camera_index: int) -> None:
     print_camera_settings(cap, camera_index)
 
     simple_window = "ASL Live Predict RGB"
-    predict_window = "ASL Live Predict Final"
+    predict_window = "ASL Live Predict Final" if debug_overlay else "ASL Final UI"
     prev_ts = time.time()
 
     history: deque[tuple[str, float]] = deque(maxlen=TEMPORAL_WINDOW_SIZE)
@@ -1641,6 +1641,7 @@ def run_live_final_prediction(camera_index: int) -> None:
     pending_label = ""
     pending_count = 0
     stable_age = 0
+    paused = False
 
     with mp_hands.Hands(
         static_image_mode=False,
@@ -1698,7 +1699,7 @@ def run_live_final_prediction(camera_index: int) -> None:
             cv2.putText(frame_pred, f"FPS: {fps:.1f}", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (220, 220, 220), 1)
 
             y_text = 98
-            if selected is not None:
+            if selected is not None and not paused:
                 mirror = MIRROR_LEFT_HAND_TO_RIGHT and str(selected["handedness"]) == "Left"
                 pts = normalize_landmarks_points(selected["landmarks"], mirror_x=mirror)
                 feat, _, _ = build_feature_vector(pts)
@@ -1759,38 +1760,74 @@ def run_live_final_prediction(camera_index: int) -> None:
                 smooth_color = (40, 240, 140) if smooth_label != "UNCERTAIN" else (70, 90, 250)
                 stable_color = (40, 240, 140) if stable_label != "UNCERTAIN" else (70, 90, 250)
 
-                cv2.putText(frame_pred, f"RAW: {raw_label} ({raw_conf:.3f})", (20, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.66, raw_color, 2)
-                y_text += 30
-                cv2.putText(
-                    frame_pred,
-                    f"SMOOTH: {smooth_label} ({smooth_conf:.3f}) w={len(history)} s={support}",
-                    (20, y_text),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.62,
-                    smooth_color,
-                    2,
-                )
-                y_text += 30
-                cv2.putText(frame_pred, f"FINAL: {stable_label} ({stable_conf:.3f})", (20, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.78, stable_color, 2)
-                y_text += 34
+                if debug_overlay:
+                    cv2.putText(frame_pred, f"RAW: {raw_label} ({raw_conf:.3f})", (20, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.66, raw_color, 2)
+                    y_text += 30
+                    cv2.putText(
+                        frame_pred,
+                        f"SMOOTH: {smooth_label} ({smooth_conf:.3f}) w={len(history)} s={support}",
+                        (20, y_text),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.62,
+                        smooth_color,
+                        2,
+                    )
+                    y_text += 30
+                    cv2.putText(frame_pred, f"FINAL: {stable_label} ({stable_conf:.3f})", (20, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.78, stable_color, 2)
+                    y_text += 34
+                    cv2.putText(
+                        frame_pred,
+                        f"Reason: raw={raw_reason}, final={stable_reason}, pend={pending_count}",
+                        (20, y_text),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.54,
+                        (210, 220, 250),
+                        1,
+                    )
 
-                cv2.putText(
-                    frame_pred,
-                    f"Reason: raw={raw_reason}, final={stable_reason}, pend={pending_count}",
-                    (20, y_text),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.54,
-                    (210, 220, 250),
-                    1,
-                )
+            if not debug_overlay:
+                # Final UI view: present only stable output and confidence bar.
+                final_color = (40, 240, 140) if stable_label != "UNCERTAIN" else (70, 90, 250)
+                cv2.putText(frame_pred, "ASL FINAL OUTPUT", (20, 105), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (230, 230, 230), 2)
+                cv2.putText(frame_pred, f"{stable_label}", (20, 175), cv2.FONT_HERSHEY_SIMPLEX, 1.6, final_color, 3)
+                cv2.putText(frame_pred, f"Confidence: {stable_conf:.3f}", (20, 215), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (230, 230, 230), 2)
 
-            cv2.putText(frame_pred, "q=quit", (20, frame_pred.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (220, 220, 220), 1)
+                bar_x, bar_y, bar_w, bar_h = 20, 235, 360, 18
+                cv2.rectangle(frame_pred, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (190, 190, 190), 1)
+                fill = int(max(0.0, min(1.0, stable_conf)) * bar_w)
+                cv2.rectangle(frame_pred, (bar_x, bar_y), (bar_x + fill, bar_y + bar_h), final_color, -1)
+
+                mode_txt = "PAUSED" if paused else "LIVE"
+                mode_color = (60, 160, 255) if paused else (80, 220, 120)
+                cv2.putText(frame_pred, f"Mode: {mode_txt}", (20, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.7, mode_color, 2)
+                cv2.putText(frame_pred, f"Status: {status}", (20, 310), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 240, 120), 2)
+                cv2.putText(frame_pred, f"FPS: {fps:.1f}", (20, 338), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (220, 220, 220), 1)
+
+            cv2.putText(
+                frame_pred,
+                "q=quit | space=pause/resume | c=clear stable",
+                (20, frame_pred.shape[0] - 20),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.58,
+                (220, 220, 220),
+                1,
+            )
 
             cv2.imshow(simple_window, frame_clean)
             cv2.imshow(predict_window, frame_pred)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break
+            if key == ord(" "):
+                paused = not paused
+            if key == ord("c"):
+                stable_label = "UNCERTAIN"
+                stable_conf = 0.0
+                stable_reason = "manual_clear"
+                pending_label = ""
+                pending_count = 0
+                stable_age = 0
+                history.clear()
 
     cap.release()
     cv2.destroyAllWindows()
@@ -1806,6 +1843,7 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--predict-models", action="store_true", help="Live per-model predictions in two windows")
     mode.add_argument("--predict-hierarchy", action="store_true", help="Live hierarchical prediction window (Step 4)")
     mode.add_argument("--predict-final", action="store_true", help="Live temporal-stabilized prediction window (Step 5)")
+    mode.add_argument("--ui-final", action="store_true", help="Final operator UI mode (Step 6)")
     mode.add_argument("--predict-stacked", action="store_true", help="Live stacked-model prediction window (Step 3)")
 
     parser.add_argument("--target", type=int, default=DEFAULT_TARGET_IMAGES_PER_CLASS, help="Target samples per class")
@@ -1851,7 +1889,11 @@ def main() -> None:
         return
 
     if args.predict_final:
-        run_live_final_prediction(camera_index=args.camera)
+        run_live_final_prediction(camera_index=args.camera, debug_overlay=True)
+        return
+
+    if args.ui_final:
+        run_live_final_prediction(camera_index=args.camera, debug_overlay=False)
         return
 
     if args.interval <= 0:

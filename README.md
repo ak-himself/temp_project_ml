@@ -139,6 +139,17 @@ Run live final stabilized prediction (Step 5):
 python capture.py --predict-final
 ```
 
+Run final operator UI (Step 6):
+
+```bash
+python capture.py --ui-final
+```
+
+Step 6 controls:
+- `space`: pause/resume live inference
+- `c`: clear stable output state
+- `q`: quit
+
 Step 5 output behavior:
 - `RAW` is direct Step 4 hierarchy output
 - `SMOOTH` is temporal-window aggregation
