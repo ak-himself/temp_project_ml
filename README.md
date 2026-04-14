@@ -14,6 +14,77 @@ From project root:
 
 ```bash
 pyenv shell 3.12.7
+pip install -r requirements.txt
+```
+
+Quick sanity check:
+
+```bash
+./app --help
+python training/train_all.py --dry-run --model all
+```
+
+## Latest Run Commands (15 Apr 2026)
+
+Use these from project root with pyenv Python 3.12.7:
+
+```bash
+pyenv shell 3.12.7
+./app --help
+./app --ui-final
+python -m py_compile src/asl_app/capture_app.py src/asl_app/live_ui.py
+```
+
+Single launcher command for all runtime modes:
+
+```bash
+./app --ui-final
+```
+
+## Command Index (Updated)
+
+Use these exact commands from project root.
+
+```bash
+# 1) Capture one class (repeat for A-Z)
+./app --gesture A --target 1200
+
+# 2) Audit dataset
+./app --audit --target 1200
+
+# 3) Build dataset preview image/report
+./app --preview --target 1200
+
+# 4) Finger analysis mode
+./app --analyze-fingers
+
+# 5) Train base models
+python training/train_xgboost.py
+python training/train_rf.py
+python training/train_mlp.py
+python training/train_cnn.py --epochs 40 --image-size 224 --batch-size 128
+
+# 6) Train all base models in one command
+python training/train_all.py --model all --epochs 40 --image-size 224 --batch-size 128
+
+# 7) Live base-model prediction view
+./app --predict-models
+
+# 8) Train stacking model
+python training/train_stacking.py
+
+# 9) Live stacked prediction view
+./app --predict-stacked
+
+# 10) Live hierarchical decision view
+./app --predict-hierarchy
+
+# 11) Live temporal-stabilized view
+./app --predict-final
+
+# 12) Final clean UI
+./app --ui-final
+
 ```
 
 ## Step 1: Data Capture and Validation
@@ -21,26 +92,26 @@ pyenv shell 3.12.7
 1. Capture class data (repeat per class)
 
 ```bash
-python capture.py --gesture A --target 1200
-python capture.py --gesture B --target 1200
+./app --gesture A --target 1200
+./app --gesture B --target 1200
 # ... continue for all classes up to Z
 ```
 
 2. Validate dataset integrity
 
 ```bash
-python capture.py --audit --target 1200
+./app --audit --target 1200
 ```
 
 3. Optional visual preview report
 
 ```bash
-python capture.py --preview --target 1200
+./app --preview --target 1200
 ```
 
 Step 1 outputs:
-- `data/raw/rgb/<CLASS>/imgXXXXXX.png`
-- `data/raw/landmarks/<CLASS>/lmXXXXXX.npy`
+- `data/rgb/<CLASS>/imgXXXXXX.png`
+- `data/landmarks/<CLASS>/lmXXXXXX.npy`
 - `logs/capture_log.csv`
 - `logs/dataset_validation.json`
 - `logs/dataset_validation.md`
@@ -64,13 +135,13 @@ python training/train_cnn.py --epochs 40 --image-size 224 --batch-size 128
 3. Optional one-command trainer for all Step 2 models
 
 ```bash
-python training/step2_train.py --model all --epochs 40 --image-size 224 --batch-size 128
+python training/train_all.py --model all --epochs 40 --image-size 224 --batch-size 128
 ```
 
 4. Test Step 2 live model view
 
 ```bash
-python capture.py --predict-models
+./app --predict-models
 ```
 
 ## Step 3: Train and Test Stacking Model
@@ -84,7 +155,7 @@ python training/train_stacking.py
 2. Test stacked live prediction
 
 ```bash
-python capture.py --predict-stacked
+./app --predict-stacked
 ```
 
 ## Step 4: Hierarchy Layer Test
@@ -92,7 +163,7 @@ python capture.py --predict-stacked
 1. Run hierarchical live prediction
 
 ```bash
-python capture.py --predict-hierarchy
+./app --predict-hierarchy
 ```
 
 Step 4 behavior:
@@ -105,7 +176,7 @@ Step 4 behavior:
 1. Run temporal-stabilized live prediction
 
 ```bash
-python capture.py --predict-final
+./app --predict-final
 ```
 
 Step 5 behavior:
@@ -118,7 +189,7 @@ Step 5 behavior:
 1. Run final clean UI mode
 
 ```bash
-python capture.py --ui-final
+./app --ui-final
 ```
 
 Controls:
@@ -137,10 +208,10 @@ python training/train_stacking.py
 Then re-test:
 
 ```bash
-python capture.py --predict-stacked
-python capture.py --predict-hierarchy
-python capture.py --predict-final
-python capture.py --ui-final
+./app --predict-stacked
+./app --predict-hierarchy
+./app --predict-final
+./app --ui-final
 ```
 
 ## Key Artifacts
@@ -148,4 +219,51 @@ python capture.py --ui-final
 - Base models: `models/xgboost.pkl`, `models/rf.pkl`, `models/mlp.pkl`, `models/cnn.h5`
 - Stacking model: `models/stack_meta.pkl`
 - Stacking config: `models/stacking_config.json`
-- Metrics: `logs/step2/*_metrics.json`
+- Metrics: `logs/*_metrics.json`
+
+## How It Works
+
+1. Capture phase:
+- A hand inside ROI is detected from webcam frames.
+- For each accepted frame, two artifacts are saved using the same sample id:
+- `data/rgb/<CLASS>/imgXXXXXX.png`
+- `data/landmarks/<CLASS>/lmXXXXXX.npy`
+- Capture metadata is appended to `logs/capture_log.csv`.
+
+2. Dataset validation phase:
+- Audit checks pairing integrity, class coverage, and feature-shape consistency.
+- Outputs are written to `logs/dataset_validation.json`, `logs/dataset_validation.md`, and optional `logs/dataset_preview.jpg`.
+
+3. Base model training phase:
+- XGBoost, Random Forest, and MLP train on 119D tabular features.
+- CNN trains on RGB crops.
+- Models are saved under `models/` and metrics JSON files under `logs/`.
+
+4. Stacking phase:
+- Base model probabilities are combined and used to train a meta-model.
+- Meta-model and config are saved as `models/stack_meta.pkl` and `models/stacking_config.json`.
+
+5. Live inference phase:
+- Runtime computes features from current hand frame.
+- Depending on mode, it shows base outputs, stacked output, hierarchy decision, temporal smoothing, or final clean UI.
+
+## File Roles
+
+- `app`: single executable root launcher for runtime capture/inference modes.
+- `src/asl_app/capture_app.py`: capture-focused runtime implementation (capture, preview, audit, shared helpers, CLI dispatch).
+- `src/asl_app/live_ui.py`: live analysis and prediction UI runtime modes.
+- `src/asl_app/config.py`: central runtime/training path and threshold configuration.
+- `src/asl_app/classes.json`: canonical class list (`A-Z`) and class_count.
+- `src/asl_app/skeleton_canvas.py`: skeleton rendering utilities for visualization windows.
+- `src/asl_app/training_common.py`: shared training utilities (manifest load, split, evaluation, save helpers).
+- `training/train_xgboost.py`: XGBoost training entrypoint.
+- `training/train_rf.py`: Random Forest training entrypoint.
+- `training/train_mlp.py`: MLP training entrypoint.
+- `training/train_cnn.py`: CNN training entrypoint.
+- `training/train_stacking.py`: stacking meta-model training entrypoint.
+- `training/train_all.py`: orchestrator to train one or all base models.
+- `data/rgb/`: captured RGB crops by class.
+- `data/landmarks/`: captured 119D feature vectors by class.
+- `models/`: serialized trained models and stacking config.
+- `logs/`: capture logs, validation reports, and model metrics JSON.
+- `requirements.txt`: Python dependencies.

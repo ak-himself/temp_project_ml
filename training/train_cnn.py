@@ -8,12 +8,16 @@ import numpy as np
 import tensorflow as tf
 from sklearn.utils.class_weight import compute_class_weight
 
-if __package__ is None or __package__ == "":
-    sys.path.append(str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+if str(SRC) not in sys.path:
+    sys.path.append(str(SRC))
 
-from training.step2_common import (
+from asl_app.training_common import (
+    LOG_DIR,
     MODELS_DIR,
-    REPORT_DIR,
     ensure_dirs,
     evaluate_predictions,
     filter_valid_rows,
@@ -211,7 +215,7 @@ def main() -> None:
     print(f"Val acc:   {metrics['splits']['val']['accuracy']:.4f}")
     print(f"Test acc:  {metrics['splits']['test']['accuracy']:.4f}")
     print(f"Saved model: {Path(MODELS_DIR / 'cnn.h5')}")
-    print(f"Reports dir: {REPORT_DIR}")
+    print(f"Logs dir: {LOG_DIR}")
 
 
 if __name__ == "__main__":

@@ -13,9 +13,9 @@ Implemented final Step 1 capture contract:
 
 1. Dual output per sample
 - RGB ROI crop saved to:
-  - data/raw/rgb/<CLASS>/imgXXXXXX.png
+  - data/rgb/<CLASS>/imgXXXXXX.png
 - 117D feature vector saved to:
-  - data/raw/landmarks/<CLASS>/lmXXXXXX.npy
+  - data/landmarks/<CLASS>/lmXXXXXX.npy
 - Strict 1:1 mapping via shared numeric sample_id.
 
 2. 117D feature schema
@@ -49,7 +49,7 @@ Implemented final Step 1 capture contract:
 
 7. Finger analysis mode
 - Command:
-  - python capture.py --analyze-fingers
+  - ./app --analyze-fingers
 - Displays:
   - per-finger angle
   - per-finger ratio
@@ -75,17 +75,17 @@ Implemented final Step 1 capture contract:
 ## Commands (Step 1)
 
 1. Capture
-python capture.py --gesture A --target 1200
+./app --gesture A --target 1200
 
 2. Two-hand capture
 No two-hand command classes in current 26-class setup.
 
 3. Validation
-python capture.py --audit --target 1200
-python capture.py --preview --target 1200
+./app --audit --target 1200
+./app --preview --target 1200
 
 4. Finger analysis
-python capture.py --analyze-fingers
+./app --analyze-fingers
 
 ## Notes
 - This update intentionally does not modify Step 2 training scripts.

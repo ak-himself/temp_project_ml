@@ -8,10 +8,14 @@ import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 from xgboost import XGBClassifier
 
-if __package__ is None or __package__ == "":
-    sys.path.append(str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
+if str(SRC) not in sys.path:
+    sys.path.append(str(SRC))
 
-from training.step2_common import (
+from asl_app.training_common import (
     MODELS_DIR,
     build_tabular_arrays,
     ensure_dirs,
