@@ -1,14 +1,28 @@
 # ASL Static Gesture Interpreter
 
-This README is a strict step-by-step runbook for training and testing the full pipeline.
+End-to-end ASL (A-Z) static hand-gesture project with:
+- Dataset capture + validation
+- Multiple base classifiers (XGBoost, Random Forest, MLP, CNN)
+- Stacking meta-model
+- Live inference modes (base, stacked, hierarchy, temporal, final UI)
+- Final evaluation with confusion-matrix diagrams and full metrics
 
-## Project Status
+## 1. What This Project Does
 
-- Class set: 26 classes (`A-Z`)
-- Feature vector: 119D (`63 + 15 + 30 + 5 + 6`)
-- Single-hand only pipeline (no two-hand mode)
+Input:
+- Webcam stream (single hand in ROI)
 
-## Prerequisites
+Outputs:
+- Captured RGB hand crops (`data/rgb/<CLASS>/imgXXXXXX.png`)
+- Captured feature vectors (`data/landmarks/<CLASS>/lmXXXXXX.npy`)
+- Trained models in `models/`
+- Validation reports and metrics in `logs/`
+- Confusion matrix diagrams (`.png`) for final model evaluation
+
+Class set:
+- 26 classes: `A` to `Z`
+
+## 2. Environment Setup
 
 From project root:
 
@@ -24,266 +38,471 @@ Quick sanity check:
 python training/train_all.py --dry-run --model all
 ```
 
-## Latest Run Commands (15 Apr 2026)
+## 3. Main Entrypoints
 
-Use these from project root with pyenv Python 3.12.7:
+Primary runtime launcher:
 
 ```bash
-pyenv shell 3.12.7
-./app --help
-./app --ui-final
-python -m py_compile src/asl_app/capture_app.py src/asl_app/live_ui.py
+./app
 ```
 
-Single launcher command for all runtime modes:
+Python launcher equivalent:
+
+```bash
+python app.py
+```
+
+Example:
 
 ```bash
 ./app --ui-final
 ```
 
-## Command Index (Updated)
+## 4. End-to-End Workflow (All Steps)
 
-Use these exact commands from project root.
+### Step 1: Capture Dataset
+
+Capture one class (repeat for all A-Z):
 
 ```bash
-# 1) Capture one class (repeat for A-Z)
 ./app --gesture A --target 1200
+```
 
-# 2) Audit dataset
+Optional capture tuning:
+
+```bash
+./app --gesture A --target 1200 --camera 0 --interval 0.01
+```
+
+### Step 1.1: Audit and Preview
+
+```bash
 ./app --audit --target 1200
-
-# 3) Build dataset preview image/report
 ./app --preview --target 1200
+```
 
-# 4) Finger analysis mode
+### Step 1.2: Finger Analysis Mode
+
+```bash
 ./app --analyze-fingers
-
-# 5) Train base models
-python training/train_xgboost.py
-python training/train_rf.py
-python training/train_mlp.py
-python training/train_cnn.py --epochs 40 --image-size 224 --batch-size 128
-
-# 6) Train all base models in one command
-python training/train_all.py --model all --epochs 40 --image-size 224 --batch-size 128
-
-# 7) Live base-model prediction view
-./app --predict-models
-
-# 8) Train stacking model
-python training/train_stacking.py
-
-# 9) Live stacked prediction view
-./app --predict-stacked
-
-# 10) Live hierarchical decision view
-./app --predict-hierarchy
-
-# 11) Live temporal-stabilized view
-./app --predict-final
-
-# 12) Final clean UI
-./app --ui-final
-
-# 13) Evaluate final stacked model (matrices + F1 + MSE + more)
-python training/evaluate_final.py --out-prefix final_model_eval
-
 ```
 
-## Step 1: Data Capture and Validation
-
-1. Capture class data (repeat per class)
-
-```bash
-./app --gesture A --target 1200
-./app --gesture B --target 1200
-# ... continue for all classes up to Z
-```
-
-2. Validate dataset integrity
-
-```bash
-./app --audit --target 1200
-```
-
-3. Optional visual preview report
-
-```bash
-./app --preview --target 1200
-```
-
-Step 1 outputs:
-- `data/rgb/<CLASS>/imgXXXXXX.png`
-- `data/landmarks/<CLASS>/lmXXXXXX.npy`
-- `logs/capture_log.csv`
-- `logs/dataset_validation.json`
-- `logs/dataset_validation.md`
-
-## Step 2: Train Base Models
-
-1. Train tabular models
+### Step 2: Train Base Models
 
 ```bash
 python training/train_xgboost.py
 python training/train_rf.py
 python training/train_mlp.py
-```
-
-2. Train CNN (powerful machine recommended)
-
-```bash
 python training/train_cnn.py --epochs 40 --image-size 224 --batch-size 128
 ```
 
-3. Optional one-command trainer for all Step 2 models
+Or run all base models with one command:
 
 ```bash
 python training/train_all.py --model all --epochs 40 --image-size 224 --batch-size 128
 ```
 
-4. Test Step 2 live model view
+### Step 3: Train Stacking Meta-Model
+
+```bash
+python training/train_stacking.py
+```
+
+### Step 4-6: Live Inference Modes
+
+Base-model live predictions:
 
 ```bash
 ./app --predict-models
 ```
 
-## Step 3: Train and Test Stacking Model
-
-1. Train stacking meta-model
-
-```bash
-python training/train_stacking.py
-```
-
-2. Test stacked live prediction
+Stacked-model live predictions:
 
 ```bash
 ./app --predict-stacked
 ```
 
-## Step 4: Hierarchy Layer Test
-
-1. Run hierarchical live prediction
+Hierarchical decision live mode:
 
 ```bash
 ./app --predict-hierarchy
 ```
 
-Step 4 behavior:
-- `FINAL`: hierarchy decision output
-- `Reason`: acceptance/rejection rule used
-- `UNCERTAIN`: no rule accepted the frame
-
-## Step 5: Temporal Stabilization Test
-
-1. Run temporal-stabilized live prediction
+Temporal stabilized live mode:
 
 ```bash
 ./app --predict-final
 ```
 
-Step 5 behavior:
-- `RAW`: direct Step 4 output
-- `SMOOTH`: windowed temporal smoothing
-- `FINAL`: debounced stable output
-
-## Step 6: Final Operator UI
-
-1. Run final clean UI mode
+Final clean UI mode:
 
 ```bash
 ./app --ui-final
 ```
 
-Controls:
-- `space`: pause/resume inference
-- `c`: clear stable state
-- `q`: quit
+### Step 7: Final Model Evaluation (Metrics + Diagrams)
 
-## Re-Training After Replacing CNN
-
-If you retrain CNN on another machine and replace `models/cnn.h5`, re-run Step 3:
-
-```bash
-python training/train_stacking.py
-```
-
-Then re-test:
-
-```bash
-./app --predict-stacked
-./app --predict-hierarchy
-./app --predict-final
-./app --ui-final
-```
-
-## Step 7: Final Model Evaluation
-
-Run full evaluation for the final stacked model:
+Full evaluation:
 
 ```bash
 python training/evaluate_final.py --out-prefix final_model_eval
-# optional faster smoke run on large datasets:
+```
+
+Faster subset evaluation (large datasets):
+
+```bash
 python training/evaluate_final.py --out-prefix final_model_eval_quick --max-per-class 100
 ```
 
-This generates:
-- `logs/final_model_eval.json` (accuracy, precision/recall, F1, balanced accuracy, log loss, MSE/RMSE/MAE, report)
+Generated artifacts:
+- `logs/final_model_eval.json`
 - `logs/final_model_eval_confusion_train.png`
 - `logs/final_model_eval_confusion_val.png`
 - `logs/final_model_eval_confusion_test.png`
 
-## Key Artifacts
+## 5. Runtime CLI Reference (`./app`)
 
-- Base models: `models/xgboost.pkl`, `models/rf.pkl`, `models/mlp.pkl`, `models/cnn.h5`
-- Stacking model: `models/stack_meta.pkl`
-- Stacking config: `models/stacking_config.json`
-- Metrics: `logs/*_metrics.json`
-- Final evaluation: `logs/final_model_eval.json` + `logs/final_model_eval_confusion_*.png`
+Modes (mutually exclusive):
+- `--gesture <CLASS>` capture mode
+- `--audit` dataset validation
+- `--preview` dataset preview + validation
+- `--analyze-fingers` finger-analysis UI
+- `--predict-models` base model live UI
+- `--predict-stacked` stacked model live UI
+- `--predict-hierarchy` hierarchical live UI
+- `--predict-final` temporal stabilized debug UI
+- `--ui-final` final clean operator UI
 
-## How It Works
+Common options:
+- `--target` target samples per class (default from config)
+- `--camera` camera index
+- `--interval` capture interval (seconds)
+- `--no-preview-window` preview without interactive window
 
-1. Capture phase:
-- A hand inside ROI is detected from webcam frames.
-- For each accepted frame, two artifacts are saved using the same sample id:
-- `data/rgb/<CLASS>/imgXXXXXX.png`
-- `data/landmarks/<CLASS>/lmXXXXXX.npy`
-- Capture metadata is appended to `logs/capture_log.csv`.
+## 6. Feature Engineering (Landmarks and Vector Layout)
 
-2. Dataset validation phase:
-- Audit checks pairing integrity, class coverage, and feature-shape consistency.
-- Outputs are written to `logs/dataset_validation.json`, `logs/dataset_validation.md`, and optional `logs/dataset_preview.jpg`.
+### 6.1 Input Landmark Source
 
-3. Base model training phase:
-- XGBoost, Random Forest, and MLP train on 119D tabular features.
-- CNN trains on RGB crops.
-- Models are saved under `models/` and metrics JSON files under `logs/`.
+- MediaPipe Hands
+- 21 keypoints per hand
+- Each keypoint has `(x, y, z)`
+- Landmarks are normalized relative to wrist and scale-normalized
 
-4. Stacking phase:
-- Base model probabilities are combined and used to train a meta-model.
-- Meta-model and config are saved as `models/stack_meta.pkl` and `models/stacking_config.json`.
+### 6.2 Landmark Index Map (21 points)
 
-5. Live inference phase:
-- Runtime computes features from current hand frame.
-- Depending on mode, it shows base outputs, stacked output, hierarchy decision, temporal smoothing, or final clean UI.
+- `0` wrist
+- `1` thumb_cmc
+- `2` thumb_mcp
+- `3` thumb_ip
+- `4` thumb_tip
+- `5` index_mcp
+- `6` index_pip
+- `7` index_dip
+- `8` index_tip
+- `9` middle_mcp
+- `10` middle_pip
+- `11` middle_dip
+- `12` middle_tip
+- `13` ring_mcp
+- `14` ring_pip
+- `15` ring_dip
+- `16` ring_tip
+- `17` pinky_mcp
+- `18` pinky_pip
+- `19` pinky_dip
+- `20` pinky_tip
 
-## File Roles
+Finger chains used by code:
+- thumb: `[0,1,2,3,4]`
+- index: `[0,5,6,7,8]`
+- middle: `[0,9,10,11,12]`
+- ring: `[0,13,14,15,16]`
+- pinky: `[0,17,18,19,20]`
 
-- `app`: single executable root launcher for runtime capture/inference modes.
-- `src/asl_app/capture_app.py`: capture-focused runtime implementation (capture, preview, audit, shared helpers, CLI dispatch).
-- `src/asl_app/live_ui.py`: live analysis and prediction UI runtime modes.
-- `src/asl_app/config.py`: central runtime/training path and threshold configuration.
-- `src/asl_app/classes.json`: canonical class list (`A-Z`) and class_count.
-- `src/asl_app/skeleton_canvas.py`: skeleton rendering utilities for visualization windows.
-- `src/asl_app/training_common.py`: shared training utilities (manifest load, split, evaluation, save helpers).
-- `training/train_xgboost.py`: XGBoost training entrypoint.
-- `training/train_rf.py`: Random Forest training entrypoint.
-- `training/train_mlp.py`: MLP training entrypoint.
-- `training/train_cnn.py`: CNN training entrypoint.
-- `training/train_stacking.py`: stacking meta-model training entrypoint.
-- `training/train_all.py`: orchestrator to train one or all base models.
-- `data/rgb/`: captured RGB crops by class.
-- `data/landmarks/`: captured 119D feature vectors by class.
-- `models/`: serialized trained models and stacking config.
-- `logs/`: capture logs, validation reports, and model metrics JSON.
-- `requirements.txt`: Python dependencies.
+### 6.3 Final Feature Vector (`119D`)
+
+- Landmark coordinates: `63D` (`21 x 3`)
+- Joint angles: `15D`
+- Pairwise distances: `30D`
+- Finger states: `5D` (closed/half-open/open per finger)
+- Palm orientation one-hot: `6D` (`camera, face, up, down, left, right`)
+
+Total: `63 + 15 + 30 + 5 + 6 = 119D`
+
+## 7. Models Used and How They Work
+
+## 7.1 Base Models (Step 2)
+
+### XGBoost (`models/xgboost.pkl`)
+
+Task:
+- Multiclass classification on `119D` tabular features
+
+Key parameters:
+- `objective=multi:softprob`
+- `num_class=26`
+- `n_estimators=500`
+- `max_depth=8`
+- `learning_rate=0.05`
+- `subsample=0.9`
+- `colsample_bytree=0.9`
+- `reg_lambda=1.0`
+- `tree_method=hist`
+- `n_jobs=-1`
+- `random_state=42` (default)
+- `eval_metric=mlogloss`
+
+Notes:
+- Uses balanced class weights converted to sample weights.
+
+### Random Forest (`models/rf.pkl`)
+
+Task:
+- Multiclass classification on `119D` tabular features
+
+Key parameters:
+- `n_estimators=400`
+- `class_weight=balanced`
+- `n_jobs=-1`
+- `random_state=42`
+- `max_features=sqrt`
+- `min_samples_leaf=1`
+
+### MLP (`models/mlp.pkl`)
+
+Task:
+- Multiclass classification on `119D` tabular features
+
+Pipeline:
+- `StandardScaler` + `MLPClassifier`
+
+MLP parameters:
+- `hidden_layer_sizes=(256, 128, 64)`
+- `activation=relu`
+- `solver=adam`
+- `alpha=1e-4`
+- `learning_rate_init=1e-3`
+- `max_iter=250`
+- `early_stopping=True`
+- `validation_fraction=0.1`
+- `n_iter_no_change=12`
+- `random_state=42`
+
+### CNN (`models/cnn.h5`)
+
+Task:
+- Multiclass classification on RGB hand crops
+
+Input:
+- Resized RGB image (`--image-size`, default training script uses `224`)
+
+Architecture (high-level):
+- Rescaling `1/255`
+- Conv2D blocks: `32 -> 64 -> 128 -> 192`
+- BatchNorm + ReLU
+- MaxPooling after first 3 conv stages
+- GlobalAveragePooling
+- Dropout `0.35`
+- Dense `192` + ReLU + BatchNorm
+- Dropout `0.25`
+- Final Dense softmax (`26` classes)
+
+Training setup:
+- Optimizer: `Adam(1e-3)`
+- Loss: `categorical_crossentropy`
+- Class weighting: balanced
+- Early stopping: patience `5`
+- ReduceLROnPlateau: factor `0.5`, patience `2`
+- Checkpoint monitor: `val_accuracy` (best model saved)
+
+## 7.2 Stacking Model (Step 3)
+
+Output file:
+- `models/stack_meta.pkl`
+
+How it works:
+- Takes base-model probabilities from: XGB, RF, MLP, CNN
+- Concatenates them into meta-features
+- Trains a logistic-regression meta-classifier
+
+Meta-model parameters:
+- `LogisticRegression`
+- `solver=lbfgs`
+- `C=1.0`
+- `max_iter=400`
+- `class_weight=balanced`
+- `random_state=42`
+
+Config file:
+- `models/stacking_config.json`
+- Stores class list, base model names, feature order, and image size
+
+## 8. Decision Policies and Thresholds
+
+All values from `src/asl_app/config.py`.
+
+### Capture and detection
+
+- ROI size ratio: `0.60`
+- ROI right margin ratio: `0.04`
+- Min brightness: `45.0`
+- Min sharpness: `20.0`
+- Min detection confidence: `0.60`
+- Min tracking confidence: `0.60`
+- Max hands: `1`
+- Hand model complexity: `0`
+- Mirror left hand to right: `True`
+
+### Finger state rules
+
+Angle thresholds:
+- `< 110` => closed (`0`)
+- `110..160` => half-open (`1`)
+- `> 160` => open (`2`)
+
+Ratio rule used in fusion:
+- `< 1.35` => closed
+- `> 1.75` => open
+- `1.10..1.90` => half-open
+
+### Dataset imbalance checks
+
+- Warning ratio: `1.5`
+- Fail ratio: `2.5`
+
+### Hierarchy mode thresholds
+
+- Stack accept confidence: `0.62`
+- Stack accept margin: `0.08`
+- Base-model min agreement: `2`
+- Base-model mean confidence: `0.55`
+- Stack support confidence: `0.42`
+- Stack top-2 support minimum: `2`
+
+### Temporal stabilization thresholds
+
+- Window size: `6`
+- Min frames: `3`
+- Accept confidence: `0.48`
+- Debounce frames: `2`
+- Stable TTL frames: `10`
+
+## 9. Data Splits and Evaluation Policy
+
+Default split strategy (`stratified_random_split`):
+- Train: `70%`
+- Validation: `15%`
+- Test: `15%`
+- Stratified by class labels
+- Default `random_state=42`
+
+Final evaluator computes (train/val/test):
+- Accuracy
+- Balanced accuracy
+- Precision macro/weighted
+- Recall macro/weighted
+- F1 macro/weighted
+- Top-3 accuracy
+- Log loss
+- MSE, RMSE, MAE (from one-hot targets vs predicted probabilities)
+- Full classification report
+- Confusion matrix diagrams (PNG)
+
+## 10. Folder and File Roles
+
+## Root-level files
+
+- `app`: executable launcher (`./app ...`)
+- `app.py`: Python launcher (`python app.py ...`)
+- `requirements.txt`: dependencies
+- `README.md`: project runbook
+- `context.md`: internal project notes
+
+## Source package (`src/asl_app`)
+
+- `src/asl_app/config.py`
+: Global configuration (paths, thresholds, camera settings, feature dimensions, policy thresholds)
+
+- `src/asl_app/classes.json`
+: Canonical class definition (`A-Z`, count 26)
+
+- `src/asl_app/capture_app.py`
+: Capture/audit/preview pipeline + feature extraction + parser/dispatch to live UI
+
+- `src/asl_app/live_ui.py`
+: Live inference modes (base, stacked, hierarchy, temporal/final UI)
+
+- `src/asl_app/skeleton_canvas.py`
+: Skeleton rendering helpers on white canvas with finger color coding
+
+- `src/asl_app/training_common.py`
+: Shared training/evaluation utilities (manifest loading, splits, metrics, model save/load helpers)
+
+- `src/asl_app/__init__.py`
+: Package initializer
+
+## Training scripts (`training`)
+
+- `training/train_xgboost.py`
+- `training/train_rf.py`
+- `training/train_mlp.py`
+- `training/train_cnn.py`
+- `training/train_all.py`
+- `training/train_stacking.py`
+- `training/evaluate_final.py`
+
+## Data and artifacts
+
+- `data/rgb/`
+: Captured RGB images by class
+
+- `data/landmarks/`
+: Captured `119D` feature vectors by class
+
+- `models/`
+: Trained model artifacts (`xgboost.pkl`, `rf.pkl`, `mlp.pkl`, `cnn.h5`, `stack_meta.pkl`, `stacking_config.json`)
+
+- `logs/`
+: Capture logs, dataset validation, model metrics JSON, final evaluation JSON + confusion matrix PNGs
+
+## 11. Controls in Live Modes
+
+Common keyboard controls:
+- `q`: quit
+
+Capture mode:
+- `s`: start/pause auto capture
+
+Finger analysis mode:
+- `k`: append current row to finger analysis CSV
+
+Final UI mode:
+- `space`: pause/resume
+- `c`: clear stable prediction state
+
+## 12. Recommended Command Order (Clean Run)
+
+```bash
+pyenv shell 3.12.7
+pip install -r requirements.txt
+
+# capture + validate
+./app --gesture A --target 1200
+./app --audit --target 1200
+./app --preview --target 1200
+
+# train base + stack
+python training/train_all.py --model all --epochs 40 --image-size 224 --batch-size 128
+python training/train_stacking.py
+
+# live final UI
+./app --ui-final
+
+# final evaluation + diagrams
+python training/evaluate_final.py --out-prefix final_model_eval
+```
+
+## 13. Notes
+
+- If `capture_log.csv` contains stale paths, final evaluation automatically falls back to scanning paired files in `data/rgb` and `data/landmarks`.
+- TensorFlow CUDA warnings may appear on systems without a matching CUDA runtime; CPU inference/evaluation can still complete.
