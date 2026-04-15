@@ -85,6 +85,9 @@ python training/train_stacking.py
 # 12) Final clean UI
 ./app --ui-final
 
+# 13) Evaluate final stacked model (matrices + F1 + MSE + more)
+python training/evaluate_final.py --out-prefix final_model_eval
+
 ```
 
 ## Step 1: Data Capture and Validation
@@ -214,12 +217,29 @@ Then re-test:
 ./app --ui-final
 ```
 
+## Step 7: Final Model Evaluation
+
+Run full evaluation for the final stacked model:
+
+```bash
+python training/evaluate_final.py --out-prefix final_model_eval
+# optional faster smoke run on large datasets:
+python training/evaluate_final.py --out-prefix final_model_eval_quick --max-per-class 100
+```
+
+This generates:
+- `logs/final_model_eval.json` (accuracy, precision/recall, F1, balanced accuracy, log loss, MSE/RMSE/MAE, report)
+- `logs/final_model_eval_confusion_train.png`
+- `logs/final_model_eval_confusion_val.png`
+- `logs/final_model_eval_confusion_test.png`
+
 ## Key Artifacts
 
 - Base models: `models/xgboost.pkl`, `models/rf.pkl`, `models/mlp.pkl`, `models/cnn.h5`
 - Stacking model: `models/stack_meta.pkl`
 - Stacking config: `models/stacking_config.json`
 - Metrics: `logs/*_metrics.json`
+- Final evaluation: `logs/final_model_eval.json` + `logs/final_model_eval_confusion_*.png`
 
 ## How It Works
 
