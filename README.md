@@ -27,23 +27,26 @@ Class set:
 From project root:
 
 ```bash
-pyenv shell 3.12.7
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 Quick sanity check:
 
 ```bash
-./app --help
+python app.py --help
 python training/train_all.py --dry-run --model all
 ```
+
+This project uses the pyenv-managed Python 3.12.8 interpreter directly; no virtual
+environment is required. Use `python` for every
+command.
 
 ## 3. Main Entrypoints
 
 Primary runtime launcher:
 
 ```bash
-./app
+python app.py
 ```
 
 Python launcher equivalent:
@@ -55,7 +58,7 @@ python app.py
 Example:
 
 ```bash
-./app --ui-final
+python app.py --ui-final
 ```
 
 ## 4. End-to-End Workflow (All Steps)
@@ -65,26 +68,26 @@ Example:
 Capture one class (repeat for all A-Z):
 
 ```bash
-./app --gesture A --target 1200
+python app.py --gesture A --target 1200
 ```
 
 Optional capture tuning:
 
 ```bash
-./app --gesture A --target 1200 --camera 0 --interval 0.01
+python app.py --gesture A --target 1200 --camera 0 --interval 0.01
 ```
 
 ### Step 1.1: Audit and Preview
 
 ```bash
-./app --audit --target 1200
-./app --preview --target 1200
+python app.py --audit --target 1200
+python app.py --preview --target 1200
 ```
 
 ### Step 1.2: Finger Analysis Mode
 
 ```bash
-./app --analyze-fingers
+python app.py --analyze-fingers
 ```
 
 ### Step 2: Train Base Models
@@ -113,31 +116,31 @@ python training/train_stacking.py
 Base-model live predictions:
 
 ```bash
-./app --predict-models
+python app.py --predict-models
 ```
 
 Stacked-model live predictions:
 
 ```bash
-./app --predict-stacked
+python app.py --predict-stacked
 ```
 
 Hierarchical decision live mode:
 
 ```bash
-./app --predict-hierarchy
+python app.py --predict-hierarchy
 ```
 
 Temporal stabilized live mode:
 
 ```bash
-./app --predict-final
+python app.py --predict-final
 ```
 
 Final clean UI mode:
 
 ```bash
-./app --ui-final
+python app.py --ui-final
 ```
 
 ### Step 7: Final Model Evaluation (Metrics + Diagrams)
@@ -483,20 +486,19 @@ Final UI mode:
 ## 12. Recommended Command Order (Clean Run)
 
 ```bash
-pyenv shell 3.12.7
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # capture + validate
-./app --gesture A --target 1200
-./app --audit --target 1200
-./app --preview --target 1200
+python app.py --gesture A --target 1200
+python app.py --audit --target 1200
+python app.py --preview --target 1200
 
 # train base + stack
 python training/train_all.py --model all --epochs 40 --image-size 224 --batch-size 128
 python training/train_stacking.py
 
 # live final UI
-./app --ui-final
+python app.py --ui-final
 
 # final evaluation + diagrams
 python training/evaluate_final.py --out-prefix final_model_eval
